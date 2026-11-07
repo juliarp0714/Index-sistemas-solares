@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Julia Ramos — Assistente Administrativo Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#04040a; --ink:#f4efe6; --dim:#8d89a3; --ember:#ffb14a; --sun:#ff6a00;
+    --serif:'Cormorant Garamond',serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:var(--sans); overflow:hidden;}
+  canvas#gl{position:fixed; inset:0; width:100%; height:100%; display:block; cursor:grab; touch-action:none;}
+  canvas#gl.dragging{cursor:grabbing;} canvas#gl.hover{cursor:pointer;}
+  .vignette{position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse 70% 65% at 50% 50%, transparent 40%, rgba(4,4,10,.75) 100%);}
+  .wordmark{position:fixed; top:30px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:11px; letter-spacing:.28em; color:var(--dim); text-transform:uppercase; text-align:center; user-select:none; pointer-events:none; white-space:nowrap;}
+  .wordmark b{color:var(--ink); font-weight:500;}
+  .hint{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:10px; letter-spacing:.18em; color:var(--dim); opacity:.75; text-transform:uppercase; transition:opacity .4s; pointer-events:none; text-align:center; width:90%;}
+
+  .lbl{position:fixed; top:0; left:0; font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:var(--dim); text-transform:uppercase; white-space:nowrap; pointer-events:none; transition:color .3s, opacity .5s; will-change:transform;}
+  .lbl.on{color:var(--ember);}
+  .lbl.tyc{color:#9fc4ff;}
+
+  .card{position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:min(92vw,460px); max-height:0; overflow:hidden; z-index:7; border-radius:22px; border:1px solid rgba(255,230,190,.22); background:linear-gradient(180deg,rgba(24,18,22,.92),rgba(9,8,13,.96)); backdrop-filter:blur(14px); box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 60px rgba(255,120,20,.08); opacity:0; pointer-events:none; transition:max-height .7s cubic-bezier(.2,.8,.2,1), opacity .5s ease .1s, padding .7s ease; padding:0 34px;}
+  .card.open{max-height:min(78vh,580px); opacity:1; pointer-events:all; padding:38px 34px 32px;}
+  .card .k{font-family:var(--mono); font-size:10px; letter-spacing:.22em; color:var(--ember); text-transform:uppercase; margin-bottom:14px;}
+  .card h2{font-family:var(--serif); font-weight:500; font-size:30px; margin:0 0 14px; line-height:1.15;}
+  .card p{font-size:14px; line-height:1.7; color:#d3cfdf; margin:0 0 10px;}
+  .card-body{max-height:340px; overflow-y:auto; padding-right:6px;}
+  .card-body::-webkit-scrollbar{width:4px;} .card-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18); border-radius:4px;}
+  .mini-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:18px 0 6px;}
+  .mini-stats div{border:1px solid rgba(255,230,190,.14); border-radius:10px; padding:10px 4px; text-align:center;}
+  .mini-stats b{display:block; font-family:var(--serif); font-size:20px; color:var(--ember);}
+  .mini-stats span{font-family:var(--mono); font-size:8px; letter-spacing:.06em; color:var(--dim); text-transform:uppercase;}
+  .plist{list-style:none; margin:14px 0 0; padding:0;}
+  .plist li{padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); font-size:13.5px; color:#d3cfdf; display:flex; gap:12px;}
+  .plist li b{color:var(--ink); min-width:96px; font-weight:500; font-family:var(--mono); font-size:11px; letter-spacing:.04em; padding-top:2px;}
+  .clinks{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+  .clinks a{display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid rgba(255,230,190,.16); border-radius:10px; padding:12px 14px; color:var(--ink); font-size:13.5px; text-decoration:none; transition:border-color .25s, background .25s;}
+  .clinks a:hover{border-color:var(--ember); background:rgba(255,177,74,.08);}
+  .clinks span.l{color:var(--dim); font-family:var(--mono); font-size:10px; letter-spacing:.06em; word-break:break-all; text-align:right;}
+  .card .close{position:absolute; top:18px; right:20px; width:28px; height:28px; border-radius:50%; border:1px solid rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:var(--mono); font-size:14px; color:var(--dim);}
+  .card .close:hover{color:var(--ink); border-color:var(--ink);}
+  @media (max-width:560px){ .wordmark{font-size:9px; letter-spacing:.18em;} .lbl{font-size:9px;} }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="vignette"></div>
+<div class="wordmark"><b>JULIA RAMOS</b> — SÃO PAULO</div>
+
+<div class="card" id="card">
+  <div class="close" id="closeBtn">×</div>
+  <div class="k" id="cardK">Perfil</div>
+  <h2 id="cardTitle">—</h2>
+  <div class="card-body" id="cardBody">—</div>
+</div>
+<div class="hint" id="hint">arraste para girar · role para zoom · toque no sol</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ---------- conteúdo ---------- */
+const S = {
+  sun:{ label:'Perfil', k:'01 · Perfil', title:'Julia Ramos',
+    body:`<p>Assistente Administrativo Financeiro em São Paulo, com trajetória em <b style="color:var(--ember)">administração financeira, rotinas administrativas e logística de distribuição</b>.</p>
+    <div class="mini-stats"><div><b>5</b><span>Empresas</span></div><div><b>2021</b><span>Início</span></div><div><b>4</b><span>Certificações</span></div><div><b>SP</b><span>Base</span></div></div>
+    <ul class="plist"><li><b>Atual</b>GrupoSC Distribuidora de Medicamentos</li><li><b>Cargo</b>Assistente administrativo financeiro</li><li><b>Áreas</b>Financeiro · Administrativo · Logística</li></ul>` },
+  exp:{ label:'Experiência', k:'02 · Trajetória', title:'Experiência',
+    body:`<ul class="plist">
+    <li><b>2025 — hoje</b>Assistente adm. financeiro · GrupoSC Distribuidora de Medicamentos</li>
+    <li><b>jul/24 — jan/25</b>Administração financeira · Agencia Forbes</li>
+    <li><b>mai — jul/24</b>Auxiliar de logística · DHL</li>
+    <li><b>set/22 — jan/24</b>Assistente administrativo · NielsenIQ Brandbank</li>
+    <li><b>fev — nov/21</b>Consultora de vendas · CantareiraCred</li></ul>` },
+  com:{ label:'Competências', k:'03 · Habilidades', title:'Principais competências',
+    body:`<p>Experiência prática em operações de distribuição e apoio financeiro-administrativo.</p>
+    <ul class="plist"><li><b>Logística</b>Logística de distribuição</li><li><b>Cargas</b>Envio e recebimento de carga</li><li><b>Geral</b>Logística</li></ul>` },
+  cer:{ label:'Certificações', k:'04 · Formação', title:'Certificações',
+    body:`<p>Trilha “Torne-se Especialista em Microsoft Office”.</p>
+    <ul class="plist"><li><b>Excel 2021</b>Formação Básica</li><li><b>Word 2021</b>Formação Básica</li><li><b>PowerPoint 2021</b>Formação Básica</li><li><b>Windows 11</b>Formação Básica</li></ul>` },
+  con:{ label:'Contato', k:'05 · Conexão', title:'Vamos conversar',
+    body:`<p>Disponível para novas oportunidades em São Paulo.</p>
+    <div class="clinks">
+      <a href="mailto:julia.ramospereira0714@gmail.com"><span>Email</span><span class="l">julia.ramospereira0714@gmail.com</span></a>
+      <a href="https://www.linkedin.com/in/juliaramos-374822247" target="_blank" rel="noopener"><span>LinkedIn</span><span class="l">juliaramos-374822247</span></a>
+      <a href="#" onclick="return false" style="cursor:default"><span>Local</span><span class="l">São Paulo, SP</span></a>
+    </div>` },
+  des:{ label:'Design', k:'06 · Criação', title:'Design & este projeto',
+    body:`<p>Este portfólio é um pequeno universo: traços minimalistas, um sol em 3D e uma navegação feita de planetas.</p>
+    <ul class="plist">
+    <li><b>Sol</b>Estrela de 8 pontas em 3D, com raios vermelho-alaranjados, dourados e amarelos</li>
+    <li><b>Céu</b>Mais de 2.000 estrelas, nebulosas e o raro sistema TYC 7037-89-1</li>
+    <li><b>Interação</b>Arraste, dê zoom e clique nos planetas para explorar</li>
+    <li><b>Tecnologia</b>three.js (WebGL), HTML e CSS</li></ul>` },
+  tyc:{ label:'TYC 7037-89-1', k:'★ Curiosidade', title:'TYC 7037-89-1',
+    body:`<p>Um sistema <b style="color:#9fc4ff">sextuplo</b> raro: seis estrelas organizadas em três pares que se orbitam, a cerca de 1.900 anos-luz, na constelação de Columba. Foi anunciado em 2021.</p>` }
+};
+
+/* ---------- cena ---------- */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x04040a);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50,1,.1,400);
+
+function tex(stops){
+  const c=document.createElement('canvas'); c.width=c.height=128; const g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,64,0,64,64,64); stops.forEach(([o,col])=>gr.addColorStop(o,col));
+  g.fillStyle=gr; g.fillRect(0,0,128,128); return new THREE.CanvasTexture(c);
+}
+const glowTex = tex([[0,'rgba(255,230,140,1)'],[.22,'rgba(255,140,30,.55)'],[.6,'rgba(255,70,0,.12)'],[1,'rgba(255,60,0,0)']]);
+const softTex = tex([[0,'rgba(255,255,255,.6)'],[.5,'rgba(255,255,255,.18)'],[1,'rgba(255,255,255,0)']]);
+function sprite(t,color,scale,op,blend){
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,color,transparent:true,opacity:op,depthWrite:false,blending:blend||THREE.AdditiveBlending}));
+  s.scale.set(scale,scale,1); return s;
+}
+function hit(r,key){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,8,8), new THREE.MeshBasicMaterial({visible:false})); m.userData.key=key; return m; }
+
+/* estrelas de fundo (2 camadas que cintilam) */
+function starLayer(n,size){
+  const pos=new Float32Array(n*3), col=new Float32Array(n*3), c=new THREE.Color();
+  for(let i=0;i<n;i++){
+    const r=70+Math.random()*130, u=Math.random()*2-1, a=Math.random()*Math.PI*2, q=Math.sqrt(1-u*u);
+    pos.set([r*q*Math.cos(a), r*u, r*q*Math.sin(a)], i*3);
+    c.setHSL([.6,.08,.1,.58][Math.random()*4|0], .7, .75+Math.random()*.25); col.set([c.r,c.g,c.b], i*3);
+  }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const p=new THREE.Points(g,new THREE.PointsMaterial({size,vertexColors:true,transparent:true,sizeAttenuation:true,depthWrite:false}));
+  scene.add(p); return p;
+}
+const starsA=starLayer(1400,.9), starsB=starLayer(900,1.1);
+
+/* nuvens / nebulosas */
+const clouds=[]; const cloudCols=[0x7a3cff,0xff5a1f,0x2a7bff,0xff2e7a,0xffa21f];
+for(let i=0;i<16;i++){
+  const a=Math.random()*Math.PI*2, r=26+Math.random()*34, s=sprite(softTex,cloudCols[i%5],24+Math.random()*30,.16+Math.random()*.1);
+  s.position.set(Math.cos(a)*r,(Math.random()-.5)*26,Math.sin(a)*r); s.userData={a,r,sp:(Math.random()*.02+.005)*(i%2?1:-1),y:s.position.y};
+  scene.add(s); clouds.push(s);
+}
+
+/* ---------- SOL: estrela de 8 pontas ---------- */
+function starGeo(n,ro,ri,depth){
+  const sh=new THREE.Shape();
+  for(let i=0;i<n*2;i++){ const r=i%2?ri:ro, a=Math.PI*i/n+Math.PI/2, x=Math.cos(a)*r, y=Math.sin(a)*r; i?sh.lineTo(x,y):sh.moveTo(x,y); }
+  sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth,bevelEnabled:true,bevelThickness:.25,bevelSize:.18,bevelSegments:4});
+  g.translate(0,0,-depth/2); return g;
+}
+const sun=new THREE.Group(); scene.add(sun);
+const mk=(geo,col,em,z)=>{ const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:col,emissive:em,emissiveIntensity:1,roughness:.4,metalness:.1})); m.position.z=z; sun.add(m); return m; };
+const rayA=mk(starGeo(8,3.4,1.5,.5),0xff4d00,0xff3300,-.1);      // raios vermelho-alaranjados
+const rayB=mk(starGeo(8,2.7,1.25,.5),0xffa400,0xff9000,.15);     // raios dourados
+const rayC=mk(starGeo(8,2.0,1.0,.4),0xffe44d,0xffd21f,.35);      // raios amarelos
+const plasma=new THREE.Mesh(new THREE.SphereGeometry(1.25,48,48),new THREE.ShaderMaterial({
+  uniforms:{t:{value:0}},
+  vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'uniform float t;varying vec3 p;void main(){float n=sin(p.x*5.+t)+sin(p.y*6.-t*1.3)+sin(p.z*7.+t*.8)+sin((p.x+p.y+p.z)*4.+t*2.);n=n*.125+.5;vec3 c=mix(vec3(1.,.3,0.),vec3(1.,.97,.55),n);gl_FragColor=vec4(c*1.25,1.);}'}));
+sun.add(plasma);
+const glow1=sprite(glowTex,0xffffff,15,.9), glow2=sprite(glowTex,0xff7a00,28,.35); sun.add(glow1,glow2);
+sun.add(hit(3.2,'sun'));
+scene.add(new THREE.PointLight(0xffd9a0,2.6,0,.6), new THREE.AmbientLight(0x2a2440,.9));
+
+/* ---------- planetas ---------- */
+const PL=[
+  {key:'exp',r:.7, d:7.5,s:.32,c:0x39b6ff,ring:0},
+  {key:'com',r:.95,d:11, s:.22,c:0xff6f3c,ring:1},
+  {key:'cer',r:.62,d:14.5,s:.17,c:0x6fe39a,moon:1},
+  {key:'con',r:.8, d:18.5,s:.12,c:0xc78bff,ring:0},
+  {key:'des',r:.72,d:22,  s:.095,c:0xffd54f,ring:1}
+];
+const picks=[hit(3.2,'sun')]; picks.length=0; // preenchido abaixo
+const interact=[]; // {key, obj}
+interact.push({key:'sun',obj:sun,off:60});
+PL.forEach((p,i)=>{
+  const piv=new THREE.Group(); piv.rotation.x=(i-1.5)*.09; piv.rotation.z=(i%2?1:-1)*.05; scene.add(piv);
+  const o=[]; for(let k=0;k<=96;k++){ const a=k/96*Math.PI*2; o.push(new THREE.Vector3(Math.cos(a)*p.d,0,Math.sin(a)*p.d)); }
+  piv.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(o),new THREE.LineBasicMaterial({color:0xffe6be,transparent:true,opacity:.14})));
+  const m=new THREE.Mesh(new THREE.SphereGeometry(p.r,40,40),new THREE.MeshStandardMaterial({color:p.c,emissive:p.c,emissiveIntensity:.14,roughness:.75}));
+  m.add(sprite(glowTex,p.c,p.r*5,.35)); m.add(hit(p.r*2.2,p.key));
+  if(p.ring){ const rg=new THREE.Mesh(new THREE.RingGeometry(p.r*1.5,p.r*2.3,64),new THREE.MeshBasicMaterial({color:0xffd9a8,transparent:true,opacity:.55,side:THREE.DoubleSide})); rg.rotation.x=Math.PI/2.4; m.add(rg); }
+  if(p.moon){ const mo=new THREE.Mesh(new THREE.SphereGeometry(.18,20,20),new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.9})); mo.userData.moon=1; m.add(mo); p.moonObj=mo; }
+  piv.add(m); p.mesh=m; p.a=Math.random()*6.28; interact.push({key:p.key,obj:m,off:p.r*20+14});
+});
+
+/* ---------- TYC 7037-89-1: sistema sextuplo ---------- */
+const tyc=new THREE.Group(); tyc.position.set(-17,6,-16); scene.add(tyc);
+const pairs=[]; const tcols=[0xcfe2ff,0x9fc4ff,0xfff1d6,0xaecbff,0xffffff,0x8fb4ff];
+for(let i=0;i<3;i++){
+  const pg=new THREE.Group(); const a=i/3*Math.PI*2; pg.position.set(Math.cos(a)*1.9,Math.sin(a*2)*.4,Math.sin(a)*1.9); tyc.add(pg);
+  for(let j=0;j<2;j++){
+    const st=new THREE.Mesh(new THREE.SphereGeometry(.22+.05*j,16,16),new THREE.MeshBasicMaterial({color:tcols[i*2+j]}));
+    st.add(sprite(glowTex,tcols[i*2+j],2.6,.8)); st.userData.o=j*Math.PI; pg.add(st);
+  }
+  pairs.push(pg);
+}
+tyc.add(hit(3,'tyc')); interact.push({key:'tyc',obj:tyc,off:46});
+
+/* ---------- rótulos HTML ---------- */
+const lbls={};
+interact.forEach(it=>{ const d=document.createElement('div'); d.className='lbl'+(it.key==='tyc'?' tyc':''); d.textContent=S[it.key].label; document.body.appendChild(d); lbls[it.key]=d; });
+
+/* ---------- interação ---------- */
+let rx=.38,ry=0,trx=.38,try_=0,dist=36,tdist=36,dragging=false,moved=0,px=0,py=0,hov=null,isOpen=false,pulse=0;
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
+function pick(e){
+  const r=canvas.getBoundingClientRect(); mouse.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(scene.children,true).filter(h=>h.object.userData.key);
+  return hits.length?hits[0].object.userData.key:null;
+}
+canvas.addEventListener('pointerdown',e=>{ dragging=true; moved=0; px=e.clientX; py=e.clientY; canvas.classList.add('dragging'); canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove',e=>{
+  if(dragging){ const dx=e.clientX-px, dy=e.clientY-py; moved+=Math.abs(dx)+Math.abs(dy); try_-=dx*.005; trx=Math.max(-.2,Math.min(1.25,trx+dy*.005)); px=e.clientX; py=e.clientY; }
+  else if(!isOpen){ hov=pick(e); canvas.classList.toggle('hover',!!hov); }
+});
+canvas.addEventListener('pointerup',e=>{ dragging=false; canvas.classList.remove('dragging'); if(moved<6){ const k=pick(e); if(k) openCard(k); } });
+canvas.addEventListener('wheel',e=>{ e.preventDefault(); tdist=Math.max(14,Math.min(52,tdist+e.deltaY*.02)); },{passive:false});
+let pinch=0;
+canvas.addEventListener('touchmove',e=>{ if(e.touches.length===2){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); if(pinch) tdist=Math.max(14,Math.min(48,tdist-(d-pinch)*.08)); pinch=d; } },{passive:true});
+canvas.addEventListener('touchend',()=>pinch=0);
+
+/* ---------- card ---------- */
+const card=document.getElementById('card'), hint=document.getElementById('hint');
+function openCard(k){
+  const s=S[k]; document.getElementById('cardK').textContent=s.k; document.getElementById('cardTitle').textContent=s.title;
+  const b=document.getElementById('cardBody'); b.innerHTML=s.body; b.scrollTop=0;
+  card.classList.add('open'); isOpen=true; hov=null; hint.style.opacity=0; if(k==='sun') pulse=1;
+  Object.values(lbls).forEach(l=>l.style.opacity=0);
+}
+function closeCard(){ card.classList.remove('open'); isOpen=false; hint.style.opacity=.75; Object.values(lbls).forEach(l=>l.style.opacity=1); }
+document.getElementById('closeBtn').addEventListener('click',closeCard);
+addEventListener('keydown',e=>{ if(e.key==='Escape'&&isOpen) closeCard(); });
+
+/* ---------- loop ---------- */
+function resize(){ const w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); tdist=Math.max(tdist,w<600?26:14); if(w<600&&dist<26){dist=tdist=36;} }
+addEventListener('resize',resize); resize();
+
+const clock=new THREE.Clock(); let t=0,speed=1; const v=new THREE.Vector3();
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tick(){
+  requestAnimationFrame(tick);
+  const dt=Math.min(clock.getDelta(),.05); speed+=((isOpen?.12:1)*(reduce?.3:1)-speed)*.05; t+=dt*speed;
+  if(!dragging) try_+=dt*.04*speed;
+  rx+=(trx-rx)*.08; ry+=(try_-ry)*.08; dist+=(tdist-dist)*.08;
+  camera.position.set(Math.sin(ry)*Math.cos(rx)*dist, Math.sin(rx)*dist, Math.cos(ry)*Math.cos(rx)*dist); camera.lookAt(0,0,0);
+
+  pulse*=.96; const k=1+Math.sin(t*2.2)*.03+pulse*.3;
+  sun.scale.setScalar(k); sun.rotation.z+=dt*.25*speed; sun.rotation.y=Math.sin(t*.5)*.45; sun.rotation.x=Math.cos(t*.4)*.2;
+  rayA.rotation.z-=dt*.35*speed; rayC.rotation.z+=dt*.5*speed;
+  rayA.material.emissiveIntensity=1+Math.sin(t*3)*.25+pulse; rayB.material.emissiveIntensity=1.1+Math.sin(t*2.4+1)*.25; rayC.material.emissiveIntensity=1.2+Math.sin(t*3.6+2)*.3;
+  glow1.material.opacity=.8+Math.sin(t*2)*.12; plasma.material.uniforms.t.value=t;
+
+  PL.forEach(p=>{ p.a+=dt*p.s*speed; p.mesh.position.set(Math.cos(p.a)*p.d,0,Math.sin(p.a)*p.d); p.mesh.rotation.y+=dt*.8;
+    if(p.moonObj){ const a=t*2; p.moonObj.position.set(Math.cos(a)*1.3,Math.sin(a*.7)*.3,Math.sin(a)*1.3); }
+    p.mesh.scale.setScalar(p.mesh.scale.x+((hov===p.key?1.25:1)-p.mesh.scale.x)*.12); });
+
+  tyc.rotation.y+=dt*.15*speed; tyc.scale.setScalar(tyc.scale.x+((hov==='tyc'?1.3:1)-tyc.scale.x)*.12);
+  pairs.forEach((pg,i)=>{ pg.children.forEach(st=>{ const a=t*(1.6+i*.3)+st.userData.o; st.position.set(Math.cos(a)*.5,0,Math.sin(a)*.5); }); });
+
+  clouds.forEach(c=>{ const u=c.userData; u.a+=u.sp*dt*speed; c.position.set(Math.cos(u.a)*u.r,u.y+Math.sin(t*.2+u.r)*1.2,Math.sin(u.a)*u.r); });
+  starsA.material.opacity=.55+Math.sin(t*1.3)*.35; starsB.material.opacity=.55+Math.cos(t*1.7)*.35;
+  starsA.rotation.y+=dt*.004; starsB.rotation.y-=dt*.003;
+
+  const w=innerWidth,h=innerHeight;
+  interact.forEach(it=>{
+    it.obj.getWorldPosition(v); v.project(camera); const l=lbls[it.key];
+    l.style.transform=`translate(${(v.x*.5+.5)*w}px,${(-v.y*.5+.5)*h+it.off}px) translate(-50%,-50%)`;
+    l.style.visibility=v.z>1?'hidden':'visible'; l.classList.toggle('on',hov===it.key);
+  });
+  renderer.render(scene,camera);
+}
+tick();
+</script>
+</body>
+</html>
